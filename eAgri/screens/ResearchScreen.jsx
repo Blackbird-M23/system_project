@@ -8,25 +8,35 @@ import {
   FlatList,
   Linking,
   Platform,
-  RefreshControl
+  RefreshControl,
+  TextInput,
+  ScrollView
 } from 'react-native';
 import axios from 'axios';
 import Header from '../components/Header';
 import { MaterialIcons } from '@expo/vector-icons';
-import { baseURL } from '../services/api';
+import api from '../services/api';
+
+const CATEGORIES = ['All', 'Agriculture', 'Farming Technology', 'Crop Science', 'Soil Science', 'Other'];
 
 const ResearchScreen = () => {
   const [researchPapers, setResearchPapers] = useState([]);
+  const [filteredPapers, setFilteredPapers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('All');
 
   const fetchResearchPapers = async () => {
     try {
-      const { data } = await axios.get(`${baseURL}/research`);
+      const { data } = await api.get('/research');
+      console.log(data); 
       setResearchPapers(data);
+      setFilteredPapers(data);
       setError('');
     } catch (err) {
+      console.error(err);
       setError('Error fetching research papers.');
     } finally {
       setLoading(false);
@@ -37,6 +47,28 @@ const ResearchScreen = () => {
   useEffect(() => {
     fetchResearchPapers();
   }, []);
+
+  useEffect(() => {
+    filterPapers();
+  }, [searchQuery, selectedCategory, researchPapers]);
+
+  const filterPapers = () => {
+    let filtered = [...researchPapers];
+    
+    // Apply category filter
+    if (selectedCategory !== 'All') {
+      filtered = filtered.filter(paper => paper.category === selectedCategory);
+    }
+    
+    // Apply search filter
+    if (searchQuery) {
+      filtered = filtered.filter(paper => 
+        paper.title.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+    
+    setFilteredPapers(filtered);
+  };
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -82,6 +114,36 @@ const ResearchScreen = () => {
     </TouchableOpacity>
   );
 
+  const renderCategoryFilter = () => (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      style={styles.categoryContainer}
+      contentContainerStyle={styles.categoryContentContainer}
+    >
+      {CATEGORIES.map((category) => (
+        <TouchableOpacity
+          key={category}
+          style={[
+            styles.categoryButton,
+            selectedCategory === category && styles.selectedCategoryButton,
+          ]}
+          onPress={() => setSelectedCategory(category)}
+        >
+          <Text
+            style={[
+              styles.categoryButtonText,
+              selectedCategory === category && styles.selectedCategoryButtonText,
+            ]}
+          >
+            {category}
+          </Text>
+        </TouchableOpacity>
+      ))}
+    </ScrollView>
+  );
+  
+
   if (loading) {
     return (
       <View style={styles.center}>
@@ -93,23 +155,38 @@ const ResearchScreen = () => {
   return (
     <View style={styles.container}>
       <Header title="Research Papers" />
+      <View style={styles.searchContainer}>
+        <MaterialIcons name="search" size={24} color="#666" style={styles.searchIcon} />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search research papers..."
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          placeholderTextColor="#999"
+        />
+      </View>
+      {renderCategoryFilter()}
       {error ? (
         <Text style={styles.error}>{error}</Text>
       ) : (
-        <FlatList
-          data={researchPapers}
-          keyExtractor={(item) => item._id}
-          renderItem={renderResearchPaper}
-          contentContainerStyle={styles.listContainer}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-          }
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>No research papers available</Text>
-            </View>
-          }
-        />
+          <FlatList
+            data={filteredPapers}
+            keyExtractor={(item) => item._id}
+            renderItem={renderResearchPaper}
+            contentContainerStyle={styles.listContainer}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            }
+            ListEmptyComponent={
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyText}>
+                  {searchQuery || selectedCategory !== 'All' 
+                    ? 'No matching research papers found'
+                    : 'No research papers available'}
+                </Text>
+              </View>
+            }
+          />
       )}
     </View>
   );
@@ -121,8 +198,64 @@ const styles = StyleSheet.create({
     backgroundColor: '#F5F5F5',
     paddingTop: Platform.OS === "android" ? 40 : 0,
   },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    margin: 16,
+    marginBottom: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  searchIcon: {
+    marginRight: 8,
+  },
+  searchInput: {
+    flex: 1,
+    height: 48,
+    fontSize: 16,
+    color: '#333',
+  },
+  categoryContainer: {
+    paddingHorizontal: 12,
+    marginBottom: 8,
+    height: 50, // Fixed height for consistency
+    backgroundColor: '#F5F5F5', // Optional for clarity
+  },
+  categoryContentContainer: {
+    alignItems: 'center', // Center items vertically
+  },
+  categoryButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6, // Reduced padding for smaller height
+    marginHorizontal: 4,
+    borderRadius: 16, // Adjusted to match smaller height
+    backgroundColor: '#FFFFFF',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  selectedCategoryButton: {
+    backgroundColor: '#4CAF50',
+  },
+  categoryButtonText: {
+    color: '#666',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  selectedCategoryButtonText: {
+    color: '#FFFFFF',
+  },
   listContainer: {
     padding: 16,
+    paddingTop: 8,
   },
   card: {
     backgroundColor: '#FFFFFF',
@@ -200,5 +333,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
 });
+
 
 export default ResearchScreen;

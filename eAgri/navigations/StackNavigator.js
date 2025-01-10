@@ -29,6 +29,10 @@ import PaymentWebView from '../screens/PaymentWebView';
 import SellScreen from '../screens/SellScreen';
 import AddToSellScreen from '../screens/AddToSellScreen';
 
+import AdminLogin from '../screens/AdminLogin';
+import AdminRegister from '../screens/AdminRegister';
+import AdminDashboard from '../screens/AdminDashboard';
+
 
 const StackNavigator = () => {
   const Stack = createStackNavigator();
@@ -171,6 +175,9 @@ const StackNavigator = () => {
         <Stack.Screen name="ForumScreen" component={ForumScreen} />
         <Stack.Screen name="PaymentWebView" component={PaymentWebView} />
         {/* <Stack.Screen name="PaymentSuccess" component={PaymentSuccess} /> */}
+        <Stack.Screen name="AdminLogin" component={AdminLogin} />
+        <Stack.Screen name="AdminRegister" component={AdminRegister} />
+        <Stack.Screen name="AdminDashboard" component={AdminDashboard} />
         <Stack.Screen 
           name="AddressEditScreen" 
           component={AddressEditScreen} 

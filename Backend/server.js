@@ -12,8 +12,12 @@ app.use(express.json());
 
 // Routes Part
 const combinedRoutes = require('./routes/combinedRoutes');
+const adminRoutes = require('./routes/adminRoutes'); // Adjust the path as needed
+
 
 app.use('/', combinedRoutes);
+
+app.use('/admin', adminRoutes);
 
 // Error Handling Middleware
 

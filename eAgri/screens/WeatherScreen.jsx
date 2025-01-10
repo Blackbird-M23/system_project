@@ -532,8 +532,14 @@ const WeatherScreen = ({ navigation }) => {
       setUserData(response.data);
       // }
     } catch (error) {
-      console.error("Error fetching user data:", error);
-      Alert.alert("Error", "Failed to load profile data");
+        console.error("Error fetching user data:", error);
+        // console.error("Error details:", {
+        //   message: error.message,
+        //   config: error.config,
+        //   response: error.response,
+        //   request: error.request
+        // });
+        Alert.alert("Error", "Failed to load profile data");
     } finally {
       setLoading(false);
     }
